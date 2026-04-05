@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Triple Challenge</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #05060a;
+      color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-top: 24px;
+      margin-bottom: 8px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 18px;
+      color: #9fa6ff;
+    }
+
+    p.subtitle {
+      margin-top: 0;
+      margin-bottom: 24px;
+      color: #a0a0b8;
+      font-size: 14px;
+    }
+
+    .games-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      width: 100%;
+      max-width: 1000px;
+      padding: 0 16px 32px;
+      box-sizing: border-box;
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, #1b1f3b, #05060a 60%);
+      border-radius: 16px;
+      padding: 16px 16px 20px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(159, 166, 255, 0.18), transparent 40%);
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #e5e7ff;
+    }
+
+    .status-pill {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(5, 6, 10, 0.7);
+      color: #f5f5f5;
+    }
+
+    .status-pill.done {
+      background: rgba(46, 204, 113, 0.12);
+      border-color: rgba(46, 204, 113, 0.6);
+      color: #a9f5c6;
+    }
+
+    .card-body {
+      font-size: 13px;
+      color: #c7c9e8;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .game-area {
+      background: rgba(5, 6, 10, 0.9);
+      border-radius: 12px;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      position: relative;
+      z-index: 1;
+    }
+
+    button {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #f9fafb;
+      border: none;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 600;
+      box-shadow: 0 8px 20px rgba(79, 70, 229, 0.5);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, opacity 0.1s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 26px rgba(79, 70, 229, 0.7);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+      opacity: 0.9;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Game 1: Memory Match */
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .memory-card {
+      background: #111322;
+      border-radius: 8px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      user-select: none;
+      transition: background 0.15s ease, transform 0.08s ease, border-color 0.15s ease;
+    }
+
+    .memory-card.revealed {
+      background: #2f365f;
+      border-color: #6366f1;
+      transform: translateY(-1px);
+    }
+
+    .memory-card.matched {
+      background: #1b4332;
+      border-color: #2ecc71;
+      color: #a9f5c6;
+      cursor: default;
+    }
+
+    /* Game 2: Reaction */
+    .reaction-box {
+      height: 120px;
+      border-radius: 10px;
+      background: #111322;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed rgba(255, 255, 255, 0.18);
+      font-size: 13px;
+      text-align: center;
+      padding: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+    }
+
+    .reaction-box.ready {
+      background: #1f2937;
+      border-style: solid;
+      border-color: #f97316;
+    }
+
+    .reaction-box.go {
+      background: #14532d;
+      border-color: #22c55e;
+      transform: translateY(-1px);
+    }
+
+    .reaction-metrics {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #9ca3af;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Game 3: Path Puzzle */
+    .path-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+    }
+
+    .path-cell {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: #111322;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      position: relative;
+      transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+    }
+
+    .path-cell.start {
+      background: #1d4ed8;
+      border-color: #60a5fa;
+    }
+
+    .path-cell.end {
+      background: #166534;
+      border-color: #22c55e;
+    }
+
+    .path-cell.wall {
+      background: #020617;
+      border-color: #020617;
+      cursor: default;
+    }
+
+    .path-cell.current {
+      box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.8);
+      transform: translateY(-1px);
+    }
+
+    .path-cell.visited {
+      background: #1f2937;
+    }
+
+    .path-cell span {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #e5e7eb;
+      pointer-events: none;
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .controls-row small {
+      opacity: 0.9;
+    }
+
+    /* Final message */
+    .final-message {
+      margin: 16px 0 32px;
+      padding: 12px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, 0.6);
+      background: radial-gradient(circle at left, rgba(34, 197, 94, 0.18), transparent 55%);
+      color: #bbf7d0;
+      font-size: 13px;
+      display: none;
+      max-width: 640px;
+      text-align: center;
+    }
+
+    .final-message span.label {
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 11px;
+      margin-right: 6px;
+      color: #4ade80;
+    }
+
+    .progress-strip {
+      margin-top: 8px;
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+    }
+
+    .progress-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #111827;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+    }
+
+    .progress-dot.done {
+      background: #22c55e;
+      border-color: #4ade80;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <h1>Triple Challenge</h1>
+  <p class="subtitle">Beat all three mini-games to unlock a hidden message.</p>
+
+  <div class="progress-strip">
+    <div class="progress-dot" id="dot-1"></div>
+    <div class="progress-dot" id="dot-2"></div>
+    <div class="progress-dot" id="dot-3"></div>
+  </div>
+
+  <div class="final-message" id="finalMessage">
+    <span class="label">Unlocked</span>
+    <span id="finalText"></span>
+  </div>
+
+  <div class="games-container">
+    <!-- Game 1: Memory Match -->
+    <div class="card" id="game1-card">
+      <div class="card-header">
+        <div class="card-title">Game 1 · Memory Grid</div>
+        <div class="status-pill" id="status-1">In Progress</div>
+      </div>
+      <div class="card-body">
+        Flip two tiles at a time. Match all pairs in as few moves as possible.
+      </div>
+      <div class="game-area">
+        <div class="memory-grid" id="memoryGrid"></div>
+        <div class="controls-row">
+          <small id="memoryMoves">Moves: 0</small>
+          <button id="memoryReset">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game 2: Reaction -->
+    <div class="card" id="game2-card">
+      <div class="card-header">
+        <div class="card-title">Game 2 · Reaction Test</div>
+        <div class="status-pill" id="status-2">In Progress</div>
+      </div>
+      <div class="card-body">
+        Click when the field turns green. Achieve three fast reactions in a row.
+      </div>
+      <div class="game-area">
+        <div class="reaction-box" id="reactionBox">
+          Click "Start" to begin a trial.
+        </div>
+        <div class="controls-row">
+          <button id="reactionStart">Start</button>
+          <small id="reactionInfo">Best: — · Streak: 0 / 3</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game 3: Path Puzzle -->
+    <div class="card" id="game3-card">
+      <div class="card-header">
+        <div class="card-title">Game 3 · Path Puzzle</div>
+        <div class="status-pill" id="status-3">In Progress</div>
+      </div>
+      <div class="card-body">
+        Move from the blue start to the green goal without touching walls. Use the arrow buttons.
+      </div>
+      <div class="game-area">
+        <div class="path-grid" id="pathGrid"></div>
+        <div class="controls-row">
+          <div>
+            <button data-dir="up" class="path-btn">↑</button>
+            <button data-dir="left" class="path-btn">←</button>
+            <button data-dir="down" class="path-btn">↓</button>
+            <button data-dir="right" class="path-btn">→</button>
+          </div>
+          <small id="pathInfo">Steps: 0</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Encoded hidden message (no label, no mention of encoding)
+    const storedPayload = "V2VsbCBkb25lLiBZb3UgY2xlYXJlZCB0aGUgY2hhbGxlbmdlcy4gTm93IGdvIGJ1aWxkIHNvbWV0aGluZyBiaWdnZXIu";
+
+    let game1Done = false;
+    let game2Done = false;
+    let game3Done = false;
+
+    function updateGameStatus() {
+      const s1 = document.getElementById("status-1");
+      const s2 = document.getElementById("status-2");
+      const s3 = document.getElementById("status-3");
+      const d1 = document.getElementById("dot-1");
+      const d2 = document.getElementById("dot-2");
+      const d3 = document.getElementById("dot-3");
+
+      if (game1Done) {
+        s1.textContent = "Completed";
+        s1.classList.add("done");
+        d1.classList.add("done");
+      }
+      if (game2Done) {
+        s2.textContent = "Completed";
+        s2.classList.add("done");
+        d2.classList.add("done");
+      }
+      if (game3Done) {
+        s3.textContent = "Completed";
+        s3.classList.add("done");
+        d3.classList.add("done");
+      }
+
+      if (game1Done && game2Done && game3Done) {
+        revealHiddenMessage();
+      }
+    }
+
+    function revealHiddenMessage() {
+      const finalMessage = document.getElementById("finalMessage");
+      const finalText = document.getElementById("finalText");
+
+      // Decode without naming the scheme anywhere
+      function decodePayload(input) {
+        try {
+          return decodeURIComponent(
+            atob(input)
+              .split("")
+              .map(function (c) {
+                return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+              })
+              .join("")
+          );
+        } catch (e) {
+          return "Message could not be decoded.";
+        }
+      }
+
+      finalText.textContent = decodePayload(storedPayload);
+      finalMessage.style.display = "inline-flex";
+    }
+
+    // -------------------------
+    // Game 1: Memory Match
+    // -------------------------
+    (function setupMemoryGame() {
+      const grid = document.getElementById("memoryGrid");
+      const movesLabel = document.getElementById("memoryMoves");
+      const resetBtn = document.getElementById("memoryReset");
+
+      const symbols = ["◆", "◆", "●", "●", "★", "★", "▲", "▲"];
+      let cards = [];
+      let firstCard = null;
+      let secondCard = null;
+      let lock = false;
+      let moves = 0;
+      let matchedCount = 0;
+
+      function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function createBoard() {
+        grid.innerHTML = "";
+        const shuffled = shuffle(symbols.slice());
+        cards = [];
+        firstCard = null;
+        secondCard = null;
+        lock = false;
+        moves = 0;
+        matchedCount = 0;
+        movesLabel.textContent = "Moves: 0";
+
+        shuffled.forEach((symbol, index) => {
+          const card = document.createElement("div");
+          card.className = "memory-card";
+          card.dataset.symbol = symbol;
+          card.dataset.index = index;
+          card.textContent = "";
+          card.addEventListener("click", () => onCardClick(card));
+          grid.appendChild(card);
+          cards.push(card);
+        });
+      }
+
+      function onCardClick(card) {
+        if (lock) return;
+        if (card.classList.contains("matched")) return;
+        if (card === firstCard) return;
+
+        card.classList.add("revealed");
+        card.textContent = card.dataset.symbol;
+
+        if (!firstCard) {
+          firstCard = card;
+          return;
+        }
+
+        secondCard = card;
+        lock = true;
+        moves++;
+        movesLabel.textContent = "Moves: " + moves;
+
+        if (firstCard.dataset.symbol === secondCard.dataset.symbol) {
+          firstCard.classList.add("matched");
+          secondCard.classList.add("matched");
+          matchedCount += 2;
+          resetSelection();
+          if (matchedCount === symbols.length) {
+            game1Done = true;
+            updateGameStatus();
+          }
+        } else {
+          setTimeout(() => {
+            firstCard.classList.remove("revealed");
+            secondCard.classList.remove("revealed");
+            firstCard.textContent = "";
+            secondCard.textContent = "";
+            resetSelection();
+          }, 700);
+        }
+      }
+
+      function resetSelection() {
+        firstCard = null;
+        secondCard = null;
+        lock = false;
+      }
+
+      resetBtn.addEventListener("click", () => {
+        game1Done = false;
+        document.getElementById("status-1").textContent = "In Progress";
+        document.getElementById("status-1").classList.remove("done");
+        document.getElementById("dot-1").classList.remove("done");
+        createBoard();
+      });
+
+      createBoard();
+    })();
+
+    // -------------------------
+    // Game 2: Reaction Test
+    // -------------------------
+    (function setupReactionGame() {
+      const box = document.getElementById("reactionBox");
+      const startBtn = document.getElementById("reactionStart");
+      const info = document.getElementById("reactionInfo");
+
+      let waiting = false;
+      let ready = false;
+      let goTime = 0;
+      let timeoutId = null;
+      let best = null;
+      let streak = 0;
+
+      function resetBox() {
+        box.classList.remove("ready", "go");
+        box.textContent = "Click \"Start\" to begin a trial.";
+      }
+
+      function startTrial() {
+        clearTimeout(timeoutId);
+        waiting = true;
+        ready = false;
+        box.classList.remove("go");
+        box.classList.add("ready");
+        box.textContent = "Wait for green...";
+        const delay = 800 + Math.random() * 2000;
+        timeoutId = setTimeout(() => {
+          waiting = false;
+          ready = true;
+          box.classList.remove("ready");
+          box.classList.add("go");
+          box.textContent = "Click!";
+          goTime = performance.now();
+        }, delay);
+      }
+
+      startBtn.addEventListener("click", () => {
+        startTrial();
+      });
+
+      box.addEventListener("click", () => {
+        if (waiting) {
+          // Clicked too early
+          clearTimeout(timeoutId);
+          waiting = false;
+          ready = false;
+          streak = 0;
+          info.textContent = `Best: ${best ? best + " ms" : "—"} · Streak: ${streak} / 3`;
+          box.classList.remove("ready", "go");
+          box.textContent = "Too soon. Click \"Start\" to try again.";
+          return;
+        }
+
+        if (ready) {
+          const now = performance.now();
+          const reaction = Math.round(now - goTime);
+          ready = false;
+          box.classList.remove("go");
+          box.textContent = `Reaction: ${reaction} ms. Click "Start" for next.`;
+
+          if (best === null || reaction < best) {
+            best = reaction;
+          }
+
+          if (reaction <= 350) {
+            streak++;
+          } else {
+            streak = 0;
+          }
+
+          info.textContent = `Best: ${best} ms · Streak: ${streak} / 3`;
+
+          if (streak >= 3) {
+            game2Done = true;
+            updateGameStatus();
+          }
+        }
+      });
+
+      resetBox();
+    })();
+
+    // -------------------------
+    // Game 3: Path Puzzle
+    // -------------------------
+    (function setupPathGame() {
+      const gridEl = document.getElementById("pathGrid");
+      const info = document.getElementById("pathInfo");
+      const buttons = document.querySelectorAll(".path-btn");
+
+      const rows = 5;
+      const cols = 5;
+
+      // 0 = empty, 1 = wall
+      const layout = [
+        [0, 0, 1, 0, 0],
+        [1, 0, 1, 0, 1],
+        [0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 0],
+        [0, 0, 0, 1, 0]
+      ];
+
+      const start = { r: 0, c: 0 };
+      const end = { r: 4, c: 4 };
+
+      let current = { r: start.r, c: start.c };
+      let steps = 0;
+      let cells = [];
+
+      function buildGrid() {
+        gridEl.innerHTML = "";
+        cells = [];
+        for (let r = 0; r < rows; r++) {
+          const rowCells = [];
+          for (let c = 0; c < cols; c++) {
+            const cell = document.createElement("div");
+            cell.className = "path-cell";
+            if (layout[r][c] === 1) {
+              cell.classList.add("wall");
+            }
+            if (r === start.r && c === start.c) {
+              cell.classList.add("start");
+              const span = document.createElement("span");
+              span.textContent = "S";
+              cell.appendChild(span);
+            } else if (r === end.r && c === end.c) {
+              cell.classList.add("end");
+              const span = document.createElement("span");
+              span.textContent = "G";
+              cell.appendChild(span);
+            }
+            gridEl.appendChild(cell);
+            rowCells.push(cell);
+          }
+          cells.push(rowCells);
+        }
+        markCurrent();
+        info.textContent = "Steps: 0";
+      }
+
+      function markCurrent() {
+        cells.forEach(row =>
+          row.forEach(cell => cell.classList.remove("current", "visited"))
+        );
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (layout[r][c] === 0 && !(r === start.r && c === start.c) && !(r === end.r && c === end.c)) {
+              if (r < current.r || c < current.c || r + c < current.r + current.c) {
+                cells[r][c].classList.add("visited");
+              }
+            }
+          }
+        }
+        cells[current.r][current.c].classList.add("current");
+      }
+
+      function move(dir) {
+        if (game3Done) return;
+        let nr = current.r;
+        let nc = current.c;
+        if (dir === "up") nr--;
+        if (dir === "down") nr++;
+        if (dir === "left") nc--;
+        if (dir === "right") nc++;
+
+        if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) return;
+        if (layout[nr][nc] === 1) return;
+
+        current = { r: nr, c: nc };
+        steps++;
+        info.textContent = "Steps: " + steps;
+        markCurrent();
+
+        if (current.r === end.r && current.c === end.c) {
+          game3Done = true;
+          updateGameStatus();
+        }
+      }
+
+      buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          move(btn.dataset.dir);
+        });
+      });
+
+      document.addEventListener("keydown", (e) => {
+        const key = e.key;
+        if (key === "ArrowUp") move("up");
+        if (key === "ArrowDown") move("down");
+        if (key === "ArrowLeft") move("left");
+        if (key === "ArrowRight") move("right");
+      });
+
+      buildGrid();
+    })();
+  </script>
+</body>
+</html>

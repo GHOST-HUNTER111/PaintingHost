@@ -87,27 +87,47 @@
     cursor: default;
   }
 
-  /* Math */
-  #mathQuestion {
-    font-size: 24px;
+  /* Tic Tac Toe */
+  #tttBoard {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    gap: 6px;
     margin-top: 20px;
   }
 
-  input {
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-    margin-top: 15px;
-    width: 120px;
-    text-align: center;
-    font-size: 18px;
+  .ttt-cell {
+    width: 100px;
+    height: 100px;
+    background: #111322;
+    border-radius: 10px;
+    font-size: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.1);
   }
 
-  /* Ball Catch */
-  #ballCanvas {
-    background: #111322;
-    border: 2px solid #333;
-    border-radius: 10px;
+  /* Simon Colors */
+  #simonButtons {
+    display: grid;
+    grid-template-columns: repeat(3, 120px);
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .color-btn {
+    width: 120px;
+    height: 120px;
+    border-radius: 12px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+  }
+
+  .color-btn.active {
+    opacity: 1;
+    box-shadow: 0 0 20px white;
   }
 
   /* Final Message */
@@ -128,22 +148,20 @@
   <div class="memory-grid" id="memoryGrid"></div>
 </div>
 
-<!-- SCREEN 2: MATH -->
+<!-- SCREEN 2: TIC TAC TOE -->
 <div id="screen2" class="screen">
-  <h1>Challenge 2 — Math Test</h1>
-  <p>Solve 10 hard problems. Get at least 6 correct.</p>
-  <div id="mathQuestion"></div>
-  <input id="mathInput" type="number" autocomplete="off">
-  <button id="submitMath">Submit</button>
-  <p id="mathProgress"></p>
+  <h1>Challenge 2 — Tic Tac Toe</h1>
+  <p>Beat the bot. You have 3 tries.</p>
+  <div id="tttBoard"></div>
+  <p id="tttStatus"></p>
 </div>
 
-<!-- SCREEN 3: BALL CATCH -->
+<!-- SCREEN 3: SIMON COLORS -->
 <div id="screen3" class="screen">
-  <h1>Challenge 3 — Ball Catch</h1>
-  <p>Click falling balls. Catch 35 out of 50.</p>
-  <canvas id="ballCanvas" width="400" height="500"></canvas>
-  <p id="ballScore"></p>
+  <h1>Challenge 3 — Color Memory</h1>
+  <p>Repeat the sequence. 3 rounds.</p>
+  <div id="simonButtons"></div>
+  <p id="simonStatus"></p>
 </div>
 
 <!-- FINAL SCREEN -->
@@ -210,7 +228,7 @@ function showScreen(id) {
       reset();
       if (matched === symbols.length) {
         setTimeout(() => showScreen("screen2"), 500);
-        nextMath();
+        startTicTacToe();
       }
     } else {
       setTimeout(() => {
@@ -233,137 +251,155 @@ function showScreen(id) {
 })();
 
 /* -------------------------
-   CHALLENGE 2 — MATH
+   CHALLENGE 2 — TIC TAC TOE
 --------------------------*/
-let mathIndex = 0;
-let mathCorrect = 0;
-let currentAnswer = 0;
+let tttBoard, tttTries = 3;
 
-function generateHardProblem() {
-  const types = [
-    () => `${a=rand(3,9)} × (${b=rand(2,8)} + ${c=rand(1,6)})`,
-    () => `${a=rand(10,30)} ÷ ${b=rand(2,6)} + ${c=rand(1,10)}`,
-    () => `(${a=rand(3,9)} × ${b=rand(3,9)}) - ${c=rand(2,10)}`
-  ];
-  const pick = types[Math.floor(Math.random()*types.length)];
-  const expr = pick();
-  currentAnswer = eval(expr.replace("×","*").replace("÷","/"));
-  return expr;
+function startTicTacToe() {
+  tttBoard = ["","","","","","","","",""];
+  const boardEl = document.getElementById("tttBoard");
+  boardEl.innerHTML = "";
+  document.getElementById("tttStatus").textContent = `Tries left: ${tttTries}`;
+
+  for (let i = 0; i < 9; i++) {
+    const cell = document.createElement("div");
+    cell.className = "ttt-cell";
+    cell.onclick = () => playerMove(i);
+    boardEl.appendChild(cell);
+  }
 }
 
-function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function playerMove(i) {
+  if (tttBoard[i] !== "") return;
+  tttBoard[i] = "X";
+  updateBoard();
 
-const mathQ = document.getElementById("mathQuestion");
-const mathInput = document.getElementById("mathInput");
-const mathProgress = document.getElementById("mathProgress");
-
-function nextMath() {
-  if (mathIndex === 10) {
-    if (mathCorrect >= 6) {
-      showScreen("screen3");
-      startBallGame();
-    } else {
-      restartGame();
-    }
+  if (checkWin("X")) {
+    showScreen("screen3");
+    startSimon();
     return;
   }
 
-  const q = generateHardProblem();
-  mathQ.textContent = q;
-  mathProgress.textContent = `Question ${mathIndex+1} / 10`;
-  mathInput.value = "";
-  mathInput.focus();
+  if (tttBoard.every(c => c !== "")) {
+    tttTries--;
+    if (tttTries <= 0) restartGame();
+    startTicTacToe();
+    return;
+  }
+
+  botMove();
 }
 
-document.getElementById("submitMath").onclick = () => {
-  if (Number(mathInput.value) === Math.round(currentAnswer)) {
-    mathCorrect++;
+function botMove() {
+  const empty = tttBoard.map((v,i)=>v===""?i:null).filter(v=>v!==null);
+  const move = empty[Math.floor(Math.random()*empty.length)];
+  tttBoard[move] = "O";
+  updateBoard();
+
+  if (checkWin("O")) {
+    tttTries--;
+    if (tttTries <= 0) restartGame();
+    startTicTacToe();
   }
-  mathIndex++;
-  nextMath();
-};
+}
+
+function updateBoard() {
+  const cells = document.querySelectorAll(".ttt-cell");
+  cells.forEach((c,i)=>c.textContent = tttBoard[i]);
+}
+
+function checkWin(p) {
+  const wins = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+  return wins.some(w => w.every(i => tttBoard[i] === p));
+}
 
 /* -------------------------
-   CHALLENGE 3 — BALL CATCH
+   CHALLENGE 3 — SIMON COLORS
 --------------------------*/
-let ctx, balls, caught, total, running;
+const simonColors = [
+  {name:"red",    hex:"#ff4d4d"},
+  {name:"blue",   hex:"#4d79ff"},
+  {name:"green",  hex:"#4dff4d"},
+  {name:"yellow", hex:"#ffff4d"},
+  {name:"purple", hex:"#b84dff"}
+];
 
-function startBallGame() {
-  const canvas = document.getElementById("ballCanvas");
-  ctx = canvas.getContext("2d");
-  balls = [];
-  caught = 0;
-  total = 0;
-  running = true;
+let simonSeq = [];
+let simonRound = 1;
+let simonIndex = 0;
+let accepting = false;
 
-  canvas.onclick = (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    balls.forEach(b => {
-      if (!b.hit && Math.hypot(b.x - x, b.y - y) < b.r) {
-        b.hit = true;
-        caught++;
-      }
-    });
-  };
-
-  spawnBall();
-  loop();
+function startSimon() {
+  simonSeq = [];
+  simonRound = 1;
+  buildSimonButtons();
+  nextSimonRound();
 }
 
-function spawnBall() {
-  if (total >= 50) return;
-
-  balls.push({
-    x: Math.random()*380+10,
-    y: 520,
-    r: 12,
-    vy: -(Math.random()*3+2),
-    gravity: 0.08,
-    drift: (Math.random()*2-1)*1.5,
-    hit: false
+function buildSimonButtons() {
+  const container = document.getElementById("simonButtons");
+  container.innerHTML = "";
+  simonColors.forEach((c,i)=>{
+    const btn = document.createElement("div");
+    btn.className = "color-btn";
+    btn.style.background = c.hex;
+    btn.onclick = () => simonClick(i);
+    container.appendChild(btn);
   });
-
-  total++;
-  setTimeout(spawnBall, 300);
 }
 
-function loop() {
-  if (!running) return;
+function nextSimonRound() {
+  accepting = false;
+  simonIndex = 0;
+  simonSeq.push(Math.floor(Math.random()*5));
+  document.getElementById("simonStatus").textContent = `Round ${simonRound} of 3`;
+  playSimonSequence();
+}
 
-  ctx.clearRect(0,0,400,500);
+function playSimonSequence() {
+  const buttons = document.querySelectorAll(".color-btn");
+  let i = 0;
 
-  balls.forEach(b => {
-    if (!b.hit) {
-      b.vy += b.gravity;
-      b.y += b.vy;
-      b.x += b.drift;
+  function flash() {
+    if (i >= simonSeq.length) {
+      accepting = true;
+      return;
     }
+    const idx = simonSeq[i];
+    const btn = buttons[idx];
+    btn.classList.add("active");
+    setTimeout(()=>{
+      btn.classList.remove("active");
+      i++;
+      setTimeout(flash, 300);
+    }, 500);
+  }
 
-    ctx.beginPath();
-    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-    ctx.fillStyle = b.hit ? "#1b4332" : "#8b5cf6";
-    ctx.fill();
-  });
+  flash();
+}
 
-  balls = balls.filter(b => b.y < 520);
+function simonClick(i) {
+  if (!accepting) return;
 
-  document.getElementById("ballScore").textContent =
-    `Caught: ${caught} / ${total}`;
-
-  if (total === 50 && balls.length === 0) {
-    running = false;
-
-    if (caught >= 35) {
-      revealSecret();
-    } else {
-      setTimeout(() => restartGame(), 300);
-    }
+  if (i !== simonSeq[simonIndex]) {
+    restartGame();
     return;
   }
 
-  requestAnimationFrame(loop);
+  simonIndex++;
+
+  if (simonIndex >= simonSeq.length) {
+    if (simonRound === 3) {
+      revealSecret();
+    } else {
+      simonRound++;
+      setTimeout(nextSimonRound, 600);
+    }
+  }
 }
 
 /* -------------------------

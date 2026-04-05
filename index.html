@@ -210,6 +210,7 @@ function showScreen(id) {
       reset();
       if (matched === symbols.length) {
         setTimeout(() => showScreen("screen2"), 500);
+        nextMath();
       }
     } else {
       setTimeout(() => {
@@ -313,14 +314,17 @@ function startBallGame() {
 
 function spawnBall() {
   if (total >= 50) return;
+
   balls.push({
     x: Math.random()*380+10,
-    y: -20,
+    y: 520,
     r: 12,
-    speed: Math.random()*3+2,
+    vy: -(Math.random()*3+2),
+    gravity: 0.08,
     drift: (Math.random()*2-1)*1.5,
     hit: false
   });
+
   total++;
   setTimeout(spawnBall, 300);
 }
@@ -332,9 +336,11 @@ function loop() {
 
   balls.forEach(b => {
     if (!b.hit) {
-      b.y += b.speed;
+      b.vy += b.gravity;
+      b.y += b.vy;
       b.x += b.drift;
     }
+
     ctx.beginPath();
     ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
     ctx.fillStyle = b.hit ? "#1b4332" : "#8b5cf6";
@@ -348,10 +354,11 @@ function loop() {
 
   if (total === 50 && balls.length === 0) {
     running = false;
+
     if (caught >= 35) {
       revealSecret();
     } else {
-      restartGame();
+      setTimeout(() => restartGame(), 300);
     }
     return;
   }
